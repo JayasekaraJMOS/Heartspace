@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 HeartSpace 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<style>
+  :root {
+    --primary-pink: #ff8fa3;
+    --accent-red: #ff4d6d;
+    --glass: rgba(255, 255, 255, 0.9);
+    --default-bg: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+    --angry-bg: linear-gradient(135deg, #ff4d4d 0%, #f9ca24 100%);
+  }
+
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Quicksand', sans-serif;
+    background: var(--default-bg);
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    transition: background 0.8s ease;
+  }
+
+  body.angry-mode { background: var(--angry-bg) !important; }
+
+  #appContent { display: none; padding-bottom: 120px; }
+  
+  /* NAVIGATION */
+  .nav-menu {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--glass); backdrop-filter: blur(15px);
+    display: flex; gap: 15px; padding: 10px 20px; border-radius: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 2000;
+  }
+  .nav-item { cursor: pointer; font-size: 1.5rem; transition: 0.3s; padding: 10px; border-radius: 50%; }
+  .nav-item.active { background: var(--primary-pink); color: white; }
+
+  .view { display: none; width: 100%; max-width: 500px; margin: 20px auto; padding: 0 15px; box-sizing: border-box; }
+  .view.active { display: block; animation: fadeIn 0.4s ease; }
+
+  header { text-align: center; padding: 30px 20px; }
+  .profile-pic { width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; object-fit: cover; }
+  
+  .card { background: var(--glass); padding: 20px; border-radius: 25px; margin-bottom: 20px; backdrop-filter: blur(10px); }
+
+  /* PROGRESS CIRCLE */
+  .progress-wrapper { position: relative; width: 150px; height: 150px; margin: 0 auto 15px; display: flex; justify-content: center; align-items: center; }
+  .progress-circle-svg { width: 150px; height: 150px; transform: rotate(-90deg); }
+  .circle-bg { fill: none; stroke: rgba(0,0,0,0.05); stroke-width: 12; }
+  .circle-bar { fill: none; stroke: var(--accent-red); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+
+  /* GOAL ITEMS */
+  .item { 
+    background: white; padding: 20px; border-radius: 24px; 
+    margin-bottom: 18px; border-left: 8px solid var(--primary-pink); 
+    position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  }
+
+  .goal-text { font-size: 1.3rem; font-weight: 600; color: #333; display: block; margin-bottom: 5px; }
+
+  .deadline-badge {
+    font-size: 1rem; font-weight: bold; color: white;
+    background: var(--primary-pink); padding: 6px 14px;
+    border-radius: 12px; display: inline-block; margin-top: 8px;
+    animation: pulse 2s infinite;
+  }
+
+  .expired-badge { background: #ff4d4d; animation: pulse-critical 1s infinite; }
+
+  .item-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 12px; }
+
+  button { border: none; padding: 10px 18px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.2s; font-family: inherit; }
+  .btn-done { background: var(--accent-red); color: white; }
+  .btn-remove { background: #f0f0f0; color: #666; font-size: 0.85rem; }
+
+  /* SETTINGS */
+  .set-row { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+
+  @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+  @keyframes pulse-critical { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  input, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 15px; border: 1px solid #eee; box-sizing: border-box; outline: none; }
+  h2 { font-family: 'Dancing Script', cursive; color: var(--accent-red); margin-top: 0; }
+</style>
+</head>
+<body>
+
+<div id="heartBgContainer"></div>
+
+<div id="authScreen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:inherit; display:flex; justify-content:center; align-items:center; z-index:3000;">
+  <div class="card" style="width:300px; text-align:center;">
+    <h1 style="font-family:'Dancing Script'; color:var(--accent-red);">HeartSpace</h1>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="handleLogin()" style="width:100%; background:var(--accent-red); color:white;">Login 💖</button>
+    <button onclick="handleSignup()" style="background:none; color:#999; font-size:0.8rem; margin-top:10px;">Create Profile</button>
+  </div>
+</div>
+
+<div id="appContent">
+  <nav class="nav-menu">
+    <div class="nav-item active" onclick="switchView('journal', this)">📝</div>
+    <div class="nav-item" onclick="switchView('goals', this)">🎯</div>
+    <div class="nav-item" onclick="switchView('profile', this)">⚙️</div>
+    <div class="nav-item" onclick="logout()">🚪</div>
+  </nav>
+
+  <header>
+    <img id="displayPic" class="profile-pic" src="https://via.placeholder.com/100">
+    <h1 id="userTitle" style="font-family:'Dancing Script';">My Space</h1>
+  </header>
+
+  <div id="journalView" class="view active">
+    <div class="card">
+      <h2>Daily Note</h2>
+      <textarea id="entryInput" placeholder="Write a memory..."></textarea>
+      <button onclick="addEntry()" style="width:100%; background:var(--accent-red); color:white;">Save Note</button>
+    </div>
+    <input type="text" id="searchInput" placeholder="🔍 Search dates..." onkeyup="renderEntries()">
+    <div id="entriesList"></div>
+  </div>
+
+  <div id="goalsView" class="view">
+    <div class="card" style="text-align: center;">
+      <div class="progress-wrapper">
+        <svg class="progress-circle-svg"><circle class="circle-bg" cx="75" cy="75" r="65"></circle><circle id="progressBar" class="circle-bar" cx="75" cy="75" r="65"></circle></svg>
+        <div style="position:absolute; text-align:center;">
+            <span id="moodFace" style="font-size:2.5rem;">😍</span><br>
+            <span id="taskRatio" style="font-weight:bold; color:var(--accent-red)">0/0</span>
+        </div>
+      </div>
+      <h2>Goal Progress</h2>
+    </div>
+    <div class="card">
+      <h2>New Goal</h2>
+      <input type="text" id="goalInput" placeholder="What's next?">
+      <input type="date" id="goalDate">
+      <button onclick="addGoal()" style="width:100%; background:var(--accent-red); color:white;">Add Goal</button>
+    </div>
+    <div id="goalsList"></div>
+  </div>
+
+  <div id="profileView" class="view">
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="set-row">
+        <label>Profile Picture</label>
+        <input type="file" id="upDp" accept="image/*">
+        <button onclick="clearSetting('dp')" style="background:#ff7675; color:white; font-size:0.7rem; margin-top:5px;">Remove Profile Pic</button>
+      </div>
+      <div class="set-row">
+        <label>Background Image</label>
+        <input type="file" id="upBg" accept="image/*">
+        <button onclick="clearSetting('bg')" style="background:#ff7675; color:white; font-size:0.7rem; margin-top:5px;">Remove Background</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentUser = null;
+const dbKey = 'heartspace_final_v12';
+
+const getDb = () => JSON.parse(localStorage.getItem(dbKey)) || {};
+const saveDb = (db) => localStorage.setItem(dbKey, JSON.stringify(db));
+
+// --- AUTH ---
+function handleSignup() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value.trim();
+    if(!u || !p) return alert("Fill fields");
+    let db = getDb(); if(db[u]) return alert("Taken");
+    db[u] = { password: p, dp: '', bg: '', entries: [], goals: [] };
+    saveDb(db); alert("Success!");
+}
+
+function handleLogin() {
+    const u = document.getElementById('username').value.trim(), p = document.getElementById('password').value.trim();
+    let db = getDb();
+    if(db[u] && db[u].password === p) { currentUser = u; startApp(); }
+    else alert("Invalid");
+}
+
+function startApp() {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    refreshUI();
+}
+
+function refreshUI() {
+    const data = getDb()[currentUser];
+    document.getElementById('userTitle').innerText = `${currentUser}'s Space`;
+    document.getElementById('displayPic').src = data.dp || 'https://via.placeholder.com/100';
+    document.body.style.backgroundImage = data.bg ? `url(${data.bg})` : '';
+    renderEntries(); renderGoals();
+}
+
+function clearSetting(type) {
+    let db = getDb(); db[currentUser][type] = '';
+    saveDb(db); refreshUI();
+}
+
+function logout() { location.reload(); }
+
+function switchView(id, el) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById(id + 'View').classList.add('active');
+    el.classList.add('active');
+}
+
+// --- IMAGE CROP ---
+async function processImage(file, isSquare) {
+    return new Promise((resolve) => {
+        const reader = new FileReader(); reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image(); img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                let targetW = 800, targetH = isSquare ? 800 : 500;
+                canvas.width = targetW; canvas.height = targetH;
+                let sX = 0, sY = 0, sW = img.width, sH = img.height;
+                const aspect = targetW / targetH;
+                if ((img.width / img.height) > aspect) { sW = img.height * aspect; sX = (img.width - sW) / 2; }
+                else { sH = img.width / aspect; sY = (img.height - sH) / 2; }
+                ctx.drawImage(img, sX, sY, sW, sH, 0, 0, targetW, targetH);
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+            }
+        }
+    });
+}
+
+document.getElementById('upDp').onchange = async (e) => {
+    const res = await processImage(e.target.files[0], true);
+    let db = getDb(); db[currentUser].dp = res; saveDb(db); refreshUI();
+};
+document.getElementById('upBg').onchange = async (e) => {
+    const res = await processImage(e.target.files[0], false);
+    let db = getDb(); db[currentUser].bg = res; saveDb(db); refreshUI();
+};
+
+// --- JOURNAL & GOALS ---
+function addEntry() {
+    const val = document.getElementById('entryInput').value.trim();
+    if(!val) return;
+    let db = getDb(); db[currentUser].entries.unshift({ id: Date.now(), text: val, date: new Date().toLocaleDateString() });
+    saveDb(db); document.getElementById('entryInput').value = ''; renderEntries();
+}
+
+function renderEntries() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const entries = getDb()[currentUser].entries;
+    document.getElementById('entriesList').innerHTML = entries.filter(e => e.date.includes(q)).map(e => `
+        <div class="item"><small style="color:#999">${e.date}</small><div style="font-family:'Dancing Script'; font-size:1.6rem; margin:10px 0;">${e.text}</div><button onclick="delEntry(${e.id})" style="background:none; color:red; padding:0;">Delete Memory</button></div>
+    `).join('');
+}
+function delEntry(id) { let db = getDb(); db[currentUser].entries = db[currentUser].entries.filter(e => e.id !== id); saveDb(db); renderEntries(); }
+
+function addGoal() {
+    const t = document.getElementById('goalInput').value.trim(), d = document.getElementById('goalDate').value;
+    if(!t || !d) return;
+    let db = getDb(); db[currentUser].goals.unshift({ id: Date.now(), text: t, date: d, done: false });
+    saveDb(db); document.getElementById('goalInput').value = ''; renderGoals();
+}
+
+function toggleGoal(id) {
+    let db = getDb();
+    db[currentUser].goals = db[currentUser].goals.map(g => {
+        if(g.id === id) { if(!g.done) confetti(); return {...g, done: !g.done}; } return g;
+    });
+    saveDb(db); renderGoals();
+}
+
+function delGoal(id) { if(confirm("Remove goal?")) { let db = getDb(); db[currentUser].goals = db[currentUser].goals.filter(g => g.id !== id); saveDb(db); renderGoals(); } }
+
+function renderGoals() {
+    const goals = getDb()[currentUser].goals;
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // Stats & Progress Bar
+    const done = goals.filter(g => g.done).length, tot = goals.length;
+    document.getElementById('taskRatio').innerText = `${done}/${tot}`;
+    document.getElementById('moodFace').innerText = tot === 0 ? '😍' : ['😭', '😢', '😐', '🙂', '😊', '😍'][Math.floor((done/(tot||1))*5)];
+    const c = 2 * Math.PI * 65;
+    document.getElementById('progressBar').style.strokeDasharray = c;
+    document.getElementById('progressBar').style.strokeDashoffset = tot === 0 ? 0 : c - (done/tot)*c;
+
+    const sorted = [...goals].sort((a, b) => {
+        const aEx = !a.done && a.date < todayStr; const bEx = !b.done && b.date < todayStr;
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        if (aEx !== bEx) return aEx ? -1 : 1;
+        return new Date(a.date) - new Date(b.date);
+    });
+
+    let isAngry = false;
+    document.getElementById('goalsList').innerHTML = sorted.map(g => {
+        const ex = !g.done && g.date < todayStr; if(ex) isAngry = true;
+        const diff = Math.ceil((new Date(g.date) - new Date(todayStr)) / 86400000);
+        let badge = g.done ? "Done! 🌟" : (diff < 0 ? `Expired ${Math.abs(diff)}d ago` : (diff==0 ? "Due Today! ⚡" : `${diff} days left`));
+        return `
+        <div class="item" style="${g.done ? 'opacity:0.6; border-color:#ccc' : (ex ? 'border-color:red; border-left-width:12px' : '')}">
+            <span class="goal-text" style="${g.done ? 'text-decoration:line-through':''}">${g.text}</span>
+            <small style="color:#888;">Due: ${g.date}</small><br>
+            <div class="deadline-badge ${!g.done && diff<=0 ? 'expired-badge':''}">${badge}</div>
+            <div class="item-actions"><button class="btn-remove" onclick="delGoal(${g.id})">Remove</button><button class="btn-done" onclick="toggleGoal(${g.id})" style="background:${g.done ? '#999' : ''}">${g.done ? 'Undo' : 'Done'}</button></div>
+        </div>`;
+    }).join('');
+    document.body.className = isAngry ? 'angry-mode' : '';
+}
+
+setInterval(() => {
+    const p = document.createElement('div');
+    p.innerHTML = '🌸';
+    p.style.cssText = `position:fixed; left:${Math.random()*100}vw; top:110vh; font-size:${Math.random()*20+15}px; z-index:-1; transition:6s linear; pointer-events:none;`;
+    document.getElementById('heartBgContainer').appendChild(p);
+    setTimeout(() => p.style.transform = `translateY(-120vh) rotate(${Math.random()*360}deg)`, 100);
+    setTimeout(() => p.remove(), 6000);
+}, 2000);
+</script>
+</body>
+</html>
