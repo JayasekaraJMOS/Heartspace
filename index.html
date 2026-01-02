@@ -20,8 +20,10 @@
     font-family: 'Quicksand', sans-serif;
     background: var(--default-bg);
     background-attachment: fixed;
+    /* --- FIX FOR MULTIPLE IMAGES --- */
+    background-repeat: no-repeat;
     background-size: cover;
-    background-position: center;
+    background-position: center center;
     min-height: 100vh;
     transition: background 0.8s ease;
   }
@@ -30,7 +32,6 @@
 
   #appContent { display: none; padding-bottom: 120px; }
   
-  /* NAVIGATION */
   .nav-menu {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     background: var(--glass); backdrop-filter: blur(15px);
@@ -55,31 +56,15 @@
   .circle-bar { fill: none; stroke: var(--accent-red); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
 
   /* GOAL ITEMS */
-  .item { 
-    background: white; padding: 20px; border-radius: 24px; 
-    margin-bottom: 18px; border-left: 8px solid var(--primary-pink); 
-    position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-  }
-
+  .item { background: white; padding: 20px; border-radius: 24px; margin-bottom: 18px; border-left: 8px solid var(--primary-pink); position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
   .goal-text { font-size: 1.3rem; font-weight: 600; color: #333; display: block; margin-bottom: 5px; }
-
-  .deadline-badge {
-    font-size: 1rem; font-weight: bold; color: white;
-    background: var(--primary-pink); padding: 6px 14px;
-    border-radius: 12px; display: inline-block; margin-top: 8px;
-    animation: pulse 2s infinite;
-  }
-
+  .deadline-badge { font-size: 1rem; font-weight: bold; color: white; background: var(--primary-pink); padding: 6px 14px; border-radius: 12px; display: inline-block; margin-top: 8px; animation: pulse 2s infinite; }
   .expired-badge { background: #ff4d4d; animation: pulse-critical 1s infinite; }
-
   .item-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 12px; }
 
   button { border: none; padding: 10px 18px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.2s; font-family: inherit; }
   .btn-done { background: var(--accent-red); color: white; }
   .btn-remove { background: #f0f0f0; color: #666; font-size: 0.85rem; }
-
-  /* SETTINGS */
-  .set-row { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
 
   @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
   @keyframes pulse-critical { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); } }
@@ -149,15 +134,15 @@
   <div id="profileView" class="view">
     <div class="card">
       <h2>Settings</h2>
-      <div class="set-row">
+      <div style="margin-bottom: 15px;">
         <label>Profile Picture</label>
         <input type="file" id="upDp" accept="image/*">
-        <button onclick="clearSetting('dp')" style="background:#ff7675; color:white; font-size:0.7rem; margin-top:5px;">Remove Profile Pic</button>
+        <button onclick="clearSetting('dp')" style="background:#ff7675; color:white; font-size:0.7rem; width:100%; margin-top:5px;">Remove Profile Pic</button>
       </div>
-      <div class="set-row">
+      <div style="margin-bottom: 15px;">
         <label>Background Image</label>
         <input type="file" id="upBg" accept="image/*">
-        <button onclick="clearSetting('bg')" style="background:#ff7675; color:white; font-size:0.7rem; margin-top:5px;">Remove Background</button>
+        <button onclick="clearSetting('bg')" style="background:#ff7675; color:white; font-size:0.7rem; width:100%; margin-top:5px;">Remove Background</button>
       </div>
     </div>
   </div>
@@ -165,7 +150,7 @@
 
 <script>
 let currentUser = null;
-const dbKey = 'heartspace_final_v12';
+const dbKey = 'heartspace_final_v14';
 
 const getDb = () => JSON.parse(localStorage.getItem(dbKey)) || {};
 const saveDb = (db) => localStorage.setItem(dbKey, JSON.stringify(db));
@@ -224,7 +209,7 @@ async function processImage(file, isSquare) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                let targetW = 800, targetH = isSquare ? 800 : 500;
+                let targetW = 1200, targetH = isSquare ? 1200 : 800;
                 canvas.width = targetW; canvas.height = targetH;
                 let sX = 0, sY = 0, sW = img.width, sH = img.height;
                 const aspect = targetW / targetH;
@@ -283,8 +268,6 @@ function delGoal(id) { if(confirm("Remove goal?")) { let db = getDb(); db[curren
 function renderGoals() {
     const goals = getDb()[currentUser].goals;
     const todayStr = new Date().toISOString().split('T')[0];
-    
-    // Stats & Progress Bar
     const done = goals.filter(g => g.done).length, tot = goals.length;
     document.getElementById('taskRatio').innerText = `${done}/${tot}`;
     document.getElementById('moodFace').innerText = tot === 0 ? '😍' : ['😭', '😢', '😐', '🙂', '😊', '😍'][Math.floor((done/(tot||1))*5)];
